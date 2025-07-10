@@ -141,12 +141,13 @@ class SimpleMultiplyTask : public IRunnable {
         }
 
         void runTask(int task_id, int num_total_tasks) {
+            printf("TASK ID: %d, NUM TASKS: %d \n", task_id, num_total_tasks);
             // handle case where num_elements is not evenly divisible by num_total_tasks
             int elements_per_task = (num_elements_ + num_total_tasks-1) / num_total_tasks;
             int start_el = elements_per_task * task_id;
             int end_el = std::min(start_el + elements_per_task, num_elements_);
-
-            for (int i=start_el; i<end_el; i++)
+            printf("elements_per_task: %d, start_el: %d, end_el: %d \n", elements_per_task, start_el, end_el);
+            for (int i = start_el; i < end_el; i++)
                 array_[i] = multiply_task(3, array_[i]);
         }
 };
@@ -517,6 +518,11 @@ TestResults simpleTest(ITaskSystem* t, bool do_async) {
         array[i] = i + 1;
     }
 
+    for (int i=0; i<num_elements; i++) {
+        printf("%d \t", array[i]);
+    }
+    printf("\n");
+
     SimpleMultiplyTask first = SimpleMultiplyTask(num_elements, array);
     SimpleMultiplyTask second = SimpleMultiplyTask(num_elements, array);
 
@@ -531,9 +537,20 @@ TestResults simpleTest(ITaskSystem* t, bool do_async) {
         t->sync();
     } else {
         t->run(&first, num_tasks);
+        printf("BETWEEN \n");
+        for (int i = 0; i < num_elements; i++)
+        {
+            printf("%d \t", array[i]);
+        }
+        printf("\n");
         t->run(&second, num_tasks);
     }
     double end_time = CycleTimer::currentSeconds();
+
+    for (int i=0; i<num_elements; i++) {
+        printf("%d \t", array[i]);
+    }
+    printf("\n");
 
     // Correctness validation
     TestResults results;

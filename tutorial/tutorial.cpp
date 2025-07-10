@@ -129,7 +129,7 @@ void condition_variable_example() {
         threads[i].join();
     }
     printf("==============================================================\n");
-
+    printf("counter %d \n", thread_state->counter_);
     delete thread_state;
     delete[] threads;
 }

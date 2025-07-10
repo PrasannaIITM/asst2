@@ -163,6 +163,7 @@ int main(int argc, char** argv)
                "======================\n");
 
         for (int i = 0; i < N_TASKSYS_IMPLS; i++) {
+            printf("NUM THREADS: %d \n", num_threads);
             double minT = 1e30;
             for (int j = 0; j < num_timing_iterations; j++) {
 
