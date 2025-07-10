@@ -130,6 +130,9 @@ void TaskSystemParallelThreadPoolSpinning::workerLoop() {
         int i = next_task.fetch_add(1, std::memory_order_relaxed);
         if (i >= total_tasks.load(std::memory_order_relaxed)) {
             /* queue empty – yield and re-check */
+            /* If every real task has finished, clear the flag ourselves */
+            if (tasks_left.load(std::memory_order_acquire) == 0)
+                has_work.store(false, std::memory_order_release);
             std::this_thread::yield();
             continue;
         }
@@ -172,6 +175,7 @@ void TaskSystemParallelThreadPoolSpinning::run(IRunnable* runnable, int num_tota
     // method in Part A.  The implementation provided below runs all
     // tasks sequentially on the calling thread.
     //
+    if (num_total_tasks <= 0) return;            // nothing to do
 
     /* initialise shared launch state */
     current_runnable = runnable;
@@ -179,6 +183,15 @@ void TaskSystemParallelThreadPoolSpinning::run(IRunnable* runnable, int num_tota
     next_task.store(0, std::memory_order_relaxed);
     tasks_left.store(num_total_tasks, std::memory_order_relaxed);
     has_work.store(true, std::memory_order_release);
+
+    // caller thread helps, so we are sure someone executes the last task
+    while (true) {                         // ← FIX 2: caller participates, needed when number of threads greater than tasks
+        int i = next_task.fetch_add(1, std::memory_order_relaxed);
+        if (i >= num_total_tasks) break;
+        runnable->runTask(i, num_total_tasks);
+        if (tasks_left.fetch_sub(1, std::memory_order_acq_rel) == 1)
+            has_work.store(false, std::memory_order_release);
+    }
 
     /* wait until every worker observes tasks_left_ == 0 */
     while (tasks_left.load(std::memory_order_acquire) != 0) {
