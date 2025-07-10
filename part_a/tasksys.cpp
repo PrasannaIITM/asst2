@@ -140,6 +140,7 @@ void TaskSystemParallelThreadPoolSpinning::workerLoop() {
         /* book-keeping */
         if (tasks_left.fetch_sub(1, std::memory_order_acq_rel) == 1) {
             /* last task finished – clear the work flag */
+            /* need to do this for synchronosity as has work needs to be set false only after last worker completes its last task */
             has_work.store(false, std::memory_order_release);
         }
     }
